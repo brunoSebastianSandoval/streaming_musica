@@ -1,0 +1,80 @@
+package unlar.edu.ar.streaming_musica.service;
+
+import org.springframework.stereotype.Service;
+import unlar.edu.ar.streaming_musica.model.Artista;
+import unlar.edu.ar.streaming_musica.model.Cancion;
+import unlar.edu.ar.streaming_musica.model.Cancion.Genero;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service 
+public class CancionService {
+    // creamos un catálogo de canciones en memoria para simular la base de datos
+    private List<Cancion> catalogo = new ArrayList<>();
+
+    public CancionService() {}
+    public List<Cancion> filtrarCanciones(Genero genero, String nombreArtista, int anioInicio, int anioFin, double ratingMinimo) {
+        return catalogo.stream()
+                .filter(c -> c.getGenero() == genero)
+                .filter(c -> c.getArtista().getNombre().equalsIgnoreCase(nombreArtista))
+                .filter(c -> c.getFechaLanzamiento().getYear() >= anioInicio && c.getFechaLanzamiento().getYear() <= anioFin)
+                .filter(c -> c.getRating() >= ratingMinimo)
+                .collect(Collectors.toList());
+    }
+ // top 10 canciones más reproducidas
+    public List<Cancion> obtenerTop10MasReproducidas() {
+        return catalogo.stream()
+                .sorted((c1, c2) -> Integer.compare(c2.getReproducciones().get(), c1.getReproducciones().get()))
+                .limit(10)
+                .collect(Collectors.toList());
+    }
+
+    public double obtenerPromedioDuracionPorGenero(Genero genero) {
+        return catalogo.stream()
+                .filter(c -> c.getGenero() == genero)
+                .collect(Collectors.averagingInt(Cancion::getDuracionSegundos));
+    }
+
+    public Artista obtenerArtistaMasPopular() {
+        return catalogo.stream()
+                .max(Comparator.comparingInt(c -> c.getReproducciones().get()))
+                .map(Cancion::getArtista)
+                .orElse(null);
+    }
+
+    public Map<Integer, List<Cancion>> obtenerDistribucionPorDecadas() {
+        return catalogo.stream()
+                .collect(Collectors.groupingBy(c -> (c.getFechaLanzamiento().getYear() / 10) * 10));
+    }
+
+    public List<Cancion> generarPlaylistAutomatica(int minutosObjetivo) {
+        int segundosObjetivo = minutosObjetivo * 60;
+        List<Cancion> mejorCombinacion = new ArrayList<>();
+        buscarCombinacion(catalogo, segundosObjetivo, new ArrayList<>(), mejorCombinacion, 0, 0);
+        return mejorCombinacion;
+    }
+
+    private void buscarCombinacion(List<Cancion> disponibles, int objetivo, List<Cancion> actual, List<Cancion> mejor, int sumaActual, int indice) {
+        if (sumaActual == objetivo) {
+            mejor.clear();
+            mejor.addAll(actual);
+            return;
+        }
+
+        if (sumaActual > objetivo || indice >= disponibles.size() || !mejor.isEmpty()) {
+            return;
+        }
+
+        Cancion cancionActual = disponibles.get(indice);
+
+        actual.add(cancionActual);
+        buscarCombinacion(disponibles, objetivo, actual, mejor, sumaActual + cancionActual.getDuracionSegundos(), indice + 1);
+        
+        actual.remove(actual.size() - 1);
+        buscarCombinacion(disponibles, objetivo, actual, mejor, sumaActual, indice + 1);
+    }
+}

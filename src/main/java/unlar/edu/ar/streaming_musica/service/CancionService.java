@@ -76,5 +76,46 @@ public class CancionService {
         
         actual.remove(actual.size() - 1);
         buscarCombinacion(disponibles, objetivo, actual, mejor, sumaActual, indice + 1);
+        
+    }
+    public Cancion busquedaBinariaPorTitulo(String titulo) {
+        List<Cancion> listaOrdenada = catalogo.stream()
+                .sorted(Comparator.comparing(Cancion::getTitulo))
+                .collect(Collectors.toList());
+
+        int inicio = 0;
+        int fin = listaOrdenada.size() - 1;
+
+        while (inicio <= fin) {
+            int medio = inicio + (fin - inicio) / 2;
+            Cancion cancionMedio = listaOrdenada.get(medio);
+            int comparacion = cancionMedio.getTitulo().compareToIgnoreCase(titulo);
+
+            if (comparacion == 0) {
+                return cancionMedio;
+            }
+            if (comparacion < 0) {
+                inicio = medio + 1;
+            } else {
+                fin = medio - 1;
+            }
+        }
+        return null;
+    }
+
+    public List<Cancion> ordenamientoPersonalizado() {
+        return catalogo.stream()
+                .sorted(Comparator.comparing((Cancion c) -> c.getArtista().getNombre())
+                        .thenComparing(Cancion::getFechaLanzamiento)
+                        .reversed())
+                .collect(Collectors.toList());
+    }
+
+    public List<Cancion> busquedaLinealMultiple(Genero genero, int anioMinimo, double ratingMinimo) {
+        return catalogo.stream()
+                .filter(c -> c.getGenero() == genero && 
+                             c.getFechaLanzamiento().getYear() > anioMinimo && 
+                             c.getRating() > ratingMinimo)
+                .collect(Collectors.toList());
     }
 }

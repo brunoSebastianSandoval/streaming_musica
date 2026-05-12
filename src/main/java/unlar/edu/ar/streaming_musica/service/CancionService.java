@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import unlar.edu.ar.streaming_musica.model.Artista;
 import unlar.edu.ar.streaming_musica.model.Cancion;
 import unlar.edu.ar.streaming_musica.model.Cancion.Genero;
-
+import unlar.edu.ar.streaming_musica.strategy.StrategyRecomendacion;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -117,5 +117,8 @@ public class CancionService {
                              c.getFechaLanzamiento().getYear() > anioMinimo && 
                              c.getRating() > ratingMinimo)
                 .collect(Collectors.toList());
+    }
+    public List<Cancion> obtenerRecomendaciones(Cancion cancionReferencia, StrategyRecomendacion estrategia) {
+        return estrategia.recomendar(this.catalogo, cancionReferencia);
     }
 }
